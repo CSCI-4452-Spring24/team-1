@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh; /* Full height of the viewport */
+            margin: 0; /* Remove default margin */
+        }
+        form {
+            margin-bottom: 20px; /* Space between forms */
+        }
+    </style>
+</head>
+<body>
+    <h2>Dashboard</h2>
+    <form action="/logout" method="post">
+        <button type="submit">Logout</button>
+    </form>
+    <form action="/action/start-new-server" method="post">
+        <button type="submit">Start New Server</button>
+    </form>
+    <form action="/action/start-existing-server" method="post">
+        <button type="submit">Start Existing Server</button>
+    </form>
+    <form action="/action/stop-server" method="post">
+        <button type="submit">Stop Server</button>
+    </form>
+    <form action="/action/manage-server" method="post">
+        <button type="submit">Manage Server</button>
+    </form>
+    <form action="/action/dashboard" method="post">
+        <button type="submit">Dashboard</button>
+    </form>
+</body>
+</html>

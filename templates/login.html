@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body {
+            background-image: url('/static/images/login-background.jpg'); /* Path to your image */
+            background-size: cover; /* Cover the entire page */
+            background-position: center; /* Center the background image */
+            height: 100vh; /* Full height of the viewport */
+            margin: 0; /* Remove default margin */
+            display: flex;
+            align-items: center; /* Center content vertically */
+            justify-content: center; /* Center content horizontally */
+        }
+        .login-form {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Subtle shadow */
+        }
+    </style>
+</head>
+<body>
+    <div class="login-form">
+        <h2>Login</h2>
+        <form method="POST" action="/login">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</body>
+</html>

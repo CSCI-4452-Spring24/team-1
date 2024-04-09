@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body {
+            background-image: url('/static/images/dashboard-background.jpg'); /* Path to your image */
+            background-size: cover; /* Cover the entire page */
+            background-position: center; /* Center the background image */
+            height: 100vh; /* Full height of the viewport */
+            margin: 0; /* Remove default margin */
+            display: flex;
+            justify-content: center; /* Center content horizontally */
+            align-items: center; /* Center content vertically */
+        }
+        .top-left {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Three columns of equal width */
+            grid-template-rows: auto auto; /* Two rows, height determined by content */
+            gap: 20px; /* Space between grid items */
+            width: 60%; /* Set the width of the grid */
+            text-align: center; /* Center text in buttons */
+        }
+        button {
+            width: 100%; /* Full width of the grid cell */
+            padding: 15px;
+            font-size: 16px; /* Font size for readability */
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <form action="/logout" method="post" class="top-left">
+        <button type="submit">Logout</button>
+    </form>
+    <div class="grid-container">
+        <form action="/action/start-new-server" method="post">
+            <button type="submit">Start New Server</button>
+        </form>
+        <form action="/action/start-existing-server" method="post">
+            <button type="submit">Start Existing Server</button>
+        </form>
+        <form action="/action/dashboard" method="post">
+            <button type="submit">Dashboard</button>
+        </form>
+        <div></div> <!-- Empty grid cell for alignment -->
+        <form action="/action/stop-server" method="post">
+            <button type="submit">Stop Server</button>
+        </form>
+        <form action="/action/manage-server" method="post">
+            <button type="submit">Manage Server</button>
+        </form>
+    </div>
+</body>
+</html>
