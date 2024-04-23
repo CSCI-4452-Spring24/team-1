@@ -122,7 +122,7 @@ resource "aws_instance"  "example" {
         sudo apt update -y
         sudo apt-get install apache2 -y
         sudo systemctl start apache2
-        sudo apt install wine64
+        sudo apt install wine64 
         echo "New Server - Variable" | sudo tee /var/www/html/index.html
         EOF
     tags = {
@@ -132,7 +132,7 @@ resource "aws_instance"  "example" {
 
 #Build in Logging and setup private access
 resource "aws_s3_bucket" "mybucket" {
-    bucket = "project1-test-bucket-forgjhollan"
+    bucket = "project1-test-bucket-forgjhollantesting123"
     acl = "private"
     tags = {
         Name = "Persistance-Bucket"

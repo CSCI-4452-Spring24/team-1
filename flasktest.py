@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from flask_session import Session  # Flask-Session for session management
-from buttons import start_minecraft_server  # Importing the new module
-from k8s_util import start_server
+from buttons import start_minecraft_server  # Importing the buttons util which is a Terraform script for initially provisioning a server
+from k8s_util import start_server # Importing for our K8's rules that support the start existing server and stop server Flask UI Buttons
+import os
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
@@ -25,7 +26,7 @@ def load_user(user_id):
 
 users = {'admin': {'password': 'password'}}
 
-@app.route('/')
+@app.route('/', methods=['POST', 'GET'])
 @login_required
 def home():
     return render_template('dashboard.html')
@@ -68,7 +69,9 @@ def action_start_server():
         return message, 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
 
 '''
 app = Flask(__name__)
