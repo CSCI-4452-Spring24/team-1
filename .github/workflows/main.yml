@@ -31,12 +31,12 @@ jobs:
           # If you're using Docker Hub, tag with your username
           # docker tag my-gameserver-app:latest username/my-gameserver-app:latest
 
-      - name: Log in to Docker Registry
-        uses: docker/login-action@v1
-        with:
-          # Replace
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+      # - name: Log in to Docker Registry
+      #   uses: docker/login-action@v1
+      #   with:
+      #     # Replace
+      #     username: ${{ secrets.REGISTRY_USERNAME }}
+      #     password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Push Docker image to Registry
         run: |
