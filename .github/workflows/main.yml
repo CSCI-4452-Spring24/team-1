@@ -38,11 +38,11 @@ jobs:
       #     username: ${{ secrets.REGISTRY_USERNAME }}
       #     password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Push Docker image to Registry
-        run: |
-          # If you're using Docker Hub, push with your username
-          # docker push username/my-gameserver-app:latest
-          docker push my-gameserver-app:latest
+      # - name: Push Docker image to Registry
+      #   run: |
+      #     # If you're using Docker Hub, push with your username
+      #     # docker push username/my-gameserver-app:latest
+      #     docker push my-gameserver-app:latest
 
   terraform-deploy:
     needs: build-flask-app
