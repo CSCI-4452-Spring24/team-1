@@ -57,8 +57,8 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
-        run: terraform plan
+      # - name: Terraform Plan
+      #   run: terraform plan
 
   #     - name: Terraform Apply
   #       run: terraform apply -auto-approve
@@ -67,12 +67,12 @@ jobs:
   #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   #         AWS_DEFAULT_REGION: 'us-west-1'
 
-  # manage-k8s-resources:
-  #   needs: terraform-deploy
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v2
+  manage-k8s-resources:
+    needs: terraform-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
   #     - name: Install kubectl
   #       run: |
