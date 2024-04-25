@@ -31,13 +31,6 @@ jobs:
           # If you're using Docker Hub, tag with your username
           # docker tag my-gameserver-app:latest username/my-gameserver-app:latest
 
-      - name: Log in to Docker Registry
-        uses: docker/login-action@v1
-        with:
-          # Replace
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
   terraform-deploy:
     needs: build-flask-app
     runs-on: ubuntu-latest
@@ -54,12 +47,12 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: 'us-west-1'
+      # - name: Terraform Apply
+      #   run: terraform apply -auto-approve
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_DEFAULT_REGION: 'us-west-1'
 
   manage-k8s-resources:
     needs: terraform-deploy
