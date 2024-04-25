@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 from flask_session import Session  # Flask-Session for session management
 from buttons import start_minecraft_server  # Importing the buttons util which is a Terraform script for initially provisioning a server
 from k8s_util import start_server # Importing for our K8's rules that support the start existing server and stop server Flask UI Buttons
+from getip import get_fargate_task_ip #Get IP BUTTON IMPORT
 import os
+import boto3
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
@@ -59,14 +61,38 @@ def action_start_new_server():
     else:
         return message, 500
 
+#FLASK STUFF FOR THE GET IP BUTTON POLLS ECS FOR IP ADDRESS OF FARGATE TASK AND RETURNS IT TO THE USER IN THE BROWSER
+@app.route('/get-ip', methods=['GET', 'POST'])
+@login_required
+def get_ip():
+    message, ip_address = get_fargate_task_ip("minecraft_server", "minecraft_server")
+    return render_template('display_ip.html', message=message, ip_address=ip_address)
+
 @app.route('/action/start-existing-server', methods=['POST'])
 @login_required
 def action_start_server():
-    success, message = start_server()
-    if success:
-        return redirect(url_for('home'))
-    else:
-        return message, 500
+    success, message = update_service_desired_count(cluster='minecraft_server', service='minecraft_server', count=1)
+    return render_template('result.html', success=success, message=message)
+
+
+@app.route('/action/stop-server', methods=['POST'])
+@login_required
+def stop_service():
+    success, message = update_service_desired_count(cluster='minecraft_server', service='minecraft_server', count=0)
+    return render_template('result.html', success=success, message=message)
+
+
+def update_service_desired_count(cluster, service, count):
+    client = boto3.client('ecs')
+    try:
+        response = client.update_service(
+            cluster=cluster,
+            service=service,
+            desiredCount=count
+        )
+        return True, "Service update successful."
+    except Exception as e:
+        return False, f"Failed to update service: {str(e)}"
 
 if __name__ == "__main__":
     #app.run(debug=True)

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Display IP</title>
+    <style>
+        body {
+            background-color: #f4f4f9; /* Light grey background */
+            color: #333; /* Dark grey text */
+            font-family: Arial, sans-serif; /* Set the font */
+            text-align: center; /* Center text */
+            padding: 50px; /* Add some padding around the content */
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Soft box shadow */
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Server IP Address</h1>
+        <p>{{ ip_address }}</p>
+        <form action="/">
+            <button type="submit">Return to Dashboard</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -8,7 +8,7 @@ def start_minecraft_server():
         print("Server start code initialized a new fresh Minecraft Server will be deployed for you on AWS")
 
 #Pathlib to construct this
-        terraform_dir = Path('/terraform') 
+        terraform_dir = Path(r"C:\Users\treyh\PycharmProjects\DCSGUI1") 
         # Initialize Terraform (if needed)
         #subprocess.run(['terraform', 'init'], cwd=terraform_dir, check=True)
         subprocess.run(['terraform', 'init'], cwd=str(terraform_dir), check=True)

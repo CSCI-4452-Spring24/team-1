@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Operation Result</title>
+</head>
+<body>
+    <h1>Result of the Operation</h1>
+    <p>{{ message }}</p>
+    {% if success %}
+        <p style="color: green;">Operation was successful!</p>
+    {% else %}
+        <p style="color: red;">Operation failed.</p>
+    {% endif %}
+    <form action="/">
+        <button type="submit">Return to Dashboard</button>
+    </form>
+</body>
+</html>
