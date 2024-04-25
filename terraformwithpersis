@@ -1,0 +1,601 @@
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  name   = "minecraft_vpc"
+  cidr   = "10.0.0.0/16"
+  azs    = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  public_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+}
+
+resource "aws_ecs_cluster" "minecraft_server" {
+  name = "minecraft_server"
+}
+
+resource "aws_security_group" "minecraft_server" {
+  name        = "minecraft_server"
+  description = "minecraft_server"
+  vpc_id      = module.vpc.vpc_id
+ 
+  ingress {
+    description = "minecraft_server"
+    from_port   = 25565
+    to_port     = 25565
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+ 
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
+
+resource "aws_efs_file_system" "minecraft_efs" {
+  creation_token = "minecraft-data"
+  tags = {
+    Name = "MinecraftEFS"
+  }
+}
+
+resource "aws_efs_access_point" "minecraft_ap" {
+  file_system_id = aws_efs_file_system.minecraft_efs.id
+  posix_user {
+    gid = 1000
+    uid = 1000
+  }
+  root_directory {
+    path = "/minecraft"
+    creation_info {
+      owner_gid   = 1000
+      owner_uid   = 1000
+      permissions = "755"
+    }
+  }
+}
+
+resource "aws_iam_role" "ecs_task_role" {
+  name = "ecs_task_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Effect = "Allow",
+        Sid = ""
+      },
+    ]
+  })
+}
+
+resource "aws_iam_policy" "ecs_task_policy" {
+  name        = "ecs_task_policy"
+  path        = "/minecraft/"
+  description = "Policy that allows ECS tasks to interact with EFS"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:Describe*",
+        ],
+        Resource = "*",
+        Effect = "Allow",
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.ecs_task_policy.arn
+}
+
+#PATCH FILE FROM COPILOT
+resource "aws_iam_role" "ecs_tasks_execution_role" {
+  name = "ecs_tasks_execution_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Effect = "Allow",
+      },
+    ]
+  })
+}
+
+#ERROR THROWS IN THIS BLOCK
+resource "aws_ecs_task_definition" "minecraft_server" {
+  family                   = "minecraft-server"
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  execution_role_arn       = aws_iam_role.ecs_tasks_execution_role.arn
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "4096"
+  memory                   = "8192"
+
+  volume {
+    name = "minecraft-data"
+
+    efs_volume_configuration {
+      file_system_id     = aws_efs_file_system.minecraft_efs.id
+      #root_directory     = "/minecraft/"
+      transit_encryption = "ENABLED"
+      authorization_config {
+        access_point_id = aws_efs_access_point.minecraft_ap.id
+        iam             = "ENABLED"
+      }
+    }
+  }
+
+  container_definitions = jsonencode([
+    {
+      name          = "minecraft-server"
+      image         = "itzg/minecraft-server:java17-alpine"
+      essential     = true
+      memory        = 8192
+      cpu           = 4096
+      mountPoints = [
+        {
+          sourceVolume  = "minecraft-data"
+          containerPath = "/minecraft"
+          readOnly      = false
+        }
+      ],
+      environment = [
+        {
+          name  = "EULA"
+          value = "TRUE"
+        },
+        {
+          name  = "VERSION"
+          value = "1.19.3"
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "minecraft_server" {
+  name            = "minecraft_server"
+  cluster         = aws_ecs_cluster.minecraft_server.id
+  task_definition = aws_ecs_task_definition.minecraft_server.arn
+  desired_count   = 1
+  network_configuration {
+    subnets          = module.vpc.public_subnets
+    security_groups  = [aws_security_group.minecraft_server.id]
+    assign_public_ip = true
+  }
+  launch_type = "FARGATE"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+provider "aws" {
+    region = "us-east-1"
+  }
+  
+  module "vpc" {
+    source = "terraform-aws-modules/vpc/aws"
+    name   = "minecraft_vpc"
+    cidr   = "10.0.0.0/16"
+    azs    = ["us-east-1a", "us-east-1b", "us-east-1c"]
+    public_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+    #FIX FOUND ON GITHUB
+    enable_dns_support   = true  # Ensures that DNS resolution is enabled
+    enable_dns_hostnames = true  # Ensures that DNS hostnames are enabled
+    #END FIX
+  }
+  
+  resource "aws_ecs_cluster" "minecraft_server" {
+    name = "minecraft_server"
+  }
+  
+  resource "aws_security_group" "minecraft_server" {
+    name        = "minecraft_server"
+    description = "minecraft_server"
+    vpc_id      = module.vpc.vpc_id
+   
+    ingress {
+      description = "minecraft_server"
+      from_port   = 25565
+      to_port     = 25565
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+   
+    egress {
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
+  }
+  
+  # EFS File System
+  resource "aws_efs_file_system" "minecraft_efs" {
+    creation_token = "minecraftEFS"
+    tags = {
+      Name = "MinecraftEFS"
+    }
+  }
+  
+  # EFS Access Point
+  resource "aws_efs_access_point" "minecraft_ap" {
+    file_system_id = aws_efs_file_system.minecraft_efs.id
+  
+    root_directory {
+      path = "/data"
+      creation_info {
+        owner_uid = 1000
+        owner_gid = 1000
+        permissions = "750"
+      }
+    }
+  }
+  
+  resource "aws_ecs_task_definition" "minecraft_server" {
+    family                   = "minecraft-server"
+    network_mode             = "awsvpc"
+    requires_compatibilities = ["FARGATE"]
+    execution_role_arn       = aws_iam_role.ecs_tasks_execution_role.arn
+    task_role_arn            = aws_iam_role.ecs_task_role.arn
+    cpu                      = "4096"
+    memory                   = "8192"
+  
+    volume {
+      name = "minecraft-data"
+  
+      efs_volume_configuration {
+        file_system_id     = aws_efs_file_system.minecraft_efs.id
+        root_directory     = "/"
+        transit_encryption = "ENABLED"
+        authorization_config {
+          access_point_id = aws_efs_access_point.minecraft_ap.id
+          iam             = "ENABLED"
+        }
+      }
+    }
+  
+   
+  
+  
+    container_definitions = jsonencode([
+      {
+        name          = "minecraft-server"
+        image         = "itzg/minecraft-server:java17-alpine"
+        essential     = true
+        memory        = 8192
+        cpu           = 4096
+        command       = [
+          "/bin/sh", "-c",
+          "apk add --no-cache python3 py3-pip && pip install boto3 && <original-entrypoint-command>"
+        ]
+        portMappings  = [
+          {
+            containerPort = 25565
+            hostPort      = 25565
+            protocol      = "tcp"
+          }
+        ]
+        environment   = [
+          {
+            name  = "EULA"
+            value = "TRUE"
+          },
+          {
+            name  = "VERSION"
+            value = "1.19.3"
+          }
+        ]
+        mountPoints   = [
+          {
+            sourceVolume  = "minecraft-data"
+            containerPath = "/data"
+            readOnly      = false
+          }
+        ]
+      }
+    ])
+  }
+  
+  #We need to create a mount target for each public subnet
+  #this is experimental and may not work
+  variable "public_subnet_ids" {
+    description = "List of public subnet IDs"
+    type        = list(string)
+    default     = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"] # Modify as necessary
+  }
+  
+  resource "aws_efs_mount_target" "efs_targets" {
+    for_each         = toset(var.public_subnet_ids)
+    file_system_id   = aws_efs_file_system.minecraft_efs.id
+    subnet_id        = each.value
+    security_groups  = [aws_security_group.minecraft_server.id]
+  }
+  
+  resource "aws_ecs_service" "minecraft_server" {
+    name            = "minecraft_server"
+    cluster         = aws_ecs_cluster.minecraft_server.id
+    task_definition = aws_ecs_task_definition.minecraft_server.arn
+    desired_count   = 1
+    network_configuration {
+      subnets          = module.vpc.public_subnets
+      security_groups  = [aws_security_group.minecraft_server.id]
+      assign_public_ip = true
+    }
+    launch_type = "FARGATE"
+  }
+  
+  data "aws_iam_policy_document" "ecs_tasks_execution_role" {
+    statement {
+      actions = ["sts:AssumeRole"]
+      principals {
+        type        = "Service"
+        identifiers = ["ecs-tasks.amazonaws.com"]
+      }
+    }
+  }
+  
+  resource "aws_iam_role" "ecs_tasks_execution_role" {
+    name               = "new-ecs-task-execution-role"
+    assume_role_policy = data.aws_iam_policy_document.ecs_tasks_execution_role.json
+  }
+  
+  resource "aws_iam_role" "ecs_task_role" {
+    name = "new-ecs_task_role"
+  
+    assume_role_policy = jsonencode({
+      Version = "2012-10-17",
+      Statement = [
+        {
+          Action = "sts:AssumeRole",
+          Principal = {
+            Service = "ecs-tasks.amazonaws.com"
+          },
+          Effect = "Allow",
+        },
+      ]
+    })
+  }
+  
+  resource "aws_security_group_rule" "nfs" {
+    type              = "ingress"
+    from_port         = 2049
+    to_port           = 2049
+    protocol          = "tcp"
+    security_group_id = aws_security_group.minecraft_server.id
+    cidr_blocks       = ["0.0.0.0/0"]  # Modify as necessary for security
+  }
+  
+  resource "aws_security_group_rule" "outbound_nfs" {
+    type              = "egress"
+    from_port         = 2049
+    to_port           = 2049
+    protocol          = "tcp"
+    security_group_id = aws_security_group.minecraft_server.id
+    cidr_blocks       = ["0.0.0.0/0"]  # Modify as necessary for security
+  }
+  
+  resource "aws_iam_role_policy_attachment" "ecs_tasks_execution_role" {
+    role       = aws_iam_role.ecs_tasks_execution_role.name
+    policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  }
+  
+
+
+
+
+  data "terraform_remote_state" "network" {
+    backend = "s3"
+    config = {
+      bucket = "your-terraform-state-bucket-for-ecs-123456789-gjh"
+      key    = "network-efs/state"
+      region = "us-east-1"
+    }
+  }
+  
+  
+  resource "aws_ecs_cluster" "minecraft_server" {
+    name = "minecraft_server"
+  }
+  
+  resource "aws_ecs_task_definition" "minecraft_server" {
+    family                   = "minecraft-server"
+    network_mode             = "awsvpc"
+    requires_compatibilities = ["FARGATE"]
+    cpu                      = "4096"
+    memory                   = "8192"
+    execution_role_arn       = data.terraform_remote_state.network.outputs.ecs_execution_role_arn
+    task_role_arn            = data.terraform_remote_state.network.outputs.ecs_task_role_arn
+  
+    volume {
+      name = "minecraft-data"
+      efs_volume_configuration {
+        file_system_id     = data.terraform_remote_state.network.outputs.efs_id
+        root_directory     = "/"
+        transit_encryption = "ENABLED"
+        authorization_config {
+          access_point_id = data.terraform_remote_state.network.outputs.efs_ap_id
+          iam             = "ENABLED"
+        }
+      }
+    }
+  
+    container_definitions = jsonencode([
+      {
+        name          = "minecraft-server"
+        image         = "itzg/minecraft-server:java17-alpine"
+        essential     = true
+        memory        = 8192
+        cpu           = 4096
+        command       = [
+          "/bin/sh", "-c",
+          "apk add --no-cache python3 py3-pip && pip install boto3 && <original-entrypoint-command>"
+        ]
+        portMappings  = [
+          {
+            containerPort = 25565
+            hostPort      = 25565
+            protocol      = "tcp"
+          }
+        ]
+        environment   = [
+          {
+            name  = "EULA"
+            value = "TRUE"
+          },
+          {
+            name  = "VERSION"
+            value = "1.19.3"
+          }
+        ]
+        mountPoints   = [
+          {
+            sourceVolume  = "minecraft-data"
+            containerPath = "/data"
+            readOnly      = false
+          }
+        ]
+      }
+    ])
+  }
+  
+  resource "aws_ecs_service" "minecraft_server" {
+    name            = "minecraft_server"
+    cluster         = aws_ecs_cluster.minecraft_server.id
+    task_definition = aws_ecs_task_definition.minecraft_server.arn
+    desired_count   = 1
+    network_configuration {
+      subnets          = var.public_subnets
+      security_groups  = [var.security_group_id]
+      assign_public_ip = true
+    }
+    launch_type = "FARGATE"
+  }
+
+  
+
+
+
+
+
+
+  provider "aws" {
+    region = "us-east-1"
+  }
+  
+  module "vpc" {
+    source = "terraform-aws-modules/vpc/aws"
+    name   = "minecraft_vpc"
+    cidr   = "10.0.0.0/16"
+    azs    = ["us-east-1a", "us-east-1b", "us-east-1c"]
+    public_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+    enable_dns_support   = true
+    enable_dns_hostnames = true
+  }
+  
+  resource "aws_efs_file_system" "minecraft_efs" {
+    creation_token = "minecraftEFS"
+    tags = {
+      Name = "MinecraftEFS"
+    }
+  }
+  
+  resource "aws_efs_access_point" "minecraft_ap" {
+    file_system_id = aws_efs_file_system.minecraft_efs.id
+    root_directory {
+      path = "/data"
+      creation_info {
+        owner_uid = 1000
+        owner_gid = 1000
+        permissions = "750"
+      }
+    }
+  }
+  
+  resource "aws_security_group" "minecraft_server" {
+    name        = "minecraft_server"
+    description = "minecraft_server"
+    vpc_id      = module.vpc.vpc_id
+  
+    ingress {
+      description = "minecraft_server"
+      from_port   = 25565
+      to_port     = 25565
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  
+    egress {
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
+  }
+  
+  terraform {
+    backend "s3" {
+      bucket = "your-terraform-state-bucket-for-ecs-123456789-gjh"
+      key    = "network-efs/state"
+      region = "us-east-1"
+    }
+  }
+  
+  output "vpc_id" {
+    value = module.vpc.vpc_id
+  }
+  
+  output "public_subnets" {
+    value = module.vpc.public_subnets
+  }
+  
+  output "security_group_id" {
+    value = aws_security_group.minecraft_server.id
+  }
+  
+  output "efs_id" {
+    value = aws_efs_file_system.minecraft_efs.id
+  }
+  
+  output "efs_ap_id" {
+    value = aws_efs_access_point.minecraft_ap.id
+  }
+  
+  
+  
+  
+  
+  
+  
