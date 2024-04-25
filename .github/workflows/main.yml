@@ -70,12 +70,15 @@ jobs:
           chmod +x ./kubectl
           sudo mv ./kubectl /usr/local/bin/kubectl
           kubectl version --client
-          
-  #     - name: Configure kubectl
-  #       run: |
-  #         aws eks --region your-region update-kubeconfig --name your-cluster-name
 
-  #     - name: Apply Kubernetes configurations
-  #       run: |
-  #         echo "Applying Kubernetes configurations..."
-  #         python k8s_util.py apply
+      - name: Configure kubectl
+        run: |
+          aws eks --region us-east-1 update-kubeconfig --name minecraft_server
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          
+      - name: Apply Kubernetes configurations
+        run: |
+          echo "Applying Kubernetes configurations..."
+          python k8s_util.py apply
