@@ -20,7 +20,7 @@ ENV AWS_DEFAULT_REGION=us-west-1
 WORKDIR /app
 
 # Create a non-privileged user
-ARG UID=10001:wq
+ARG UID=10001
 
 
 RUN adduser \
